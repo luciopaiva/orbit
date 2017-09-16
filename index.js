@@ -22,22 +22,29 @@ class OrbitApp {
         this.addMetric("Moon-Earth distance", () => this.orbitRadiusVector.set(
             this.moon.position).subtract(this.earth.position).scale(1e-6).length().toFixed(1) + " Mm");
 
-        window.addEventListener("resize", () => this.resize());
+        this.widthInMeters = OrbitApp.DISPLAY_WIDTH_IN_METERS;
+        this.halfWidthInMeters = this.widthInMeters / 2;
+        this.halfHeightInMeters = 1 * this.halfWidthInMeters;  // will be overwritten soon when we resize the screen
 
+        /** @type {Body[]} */
         this.bodies = [];
-        this.bodyElements = [];
+        /** @type {BodyRepresentation[]} */
+        this.bodyRepresentations = [];
+
+        window.addEventListener("resize", () => this.resize());
+        this.resize();
 
         this.sun = new Body(0, 0, OrbitApp.SUN_RADIUS_IN_METERS * OrbitApp.SUN_RADIUS_MAGNIFICATION_FACTOR,
             OrbitApp.SUN_MASS_IN_KG);
-        this.sunElement = this.makeBodyElement("star");
+        this.sunRepresentation = this.makeBodyRepresentation("star", this.sun);
+        this.drawBody(this.sun, this.sunRepresentation);
 
         this.earth = new Body(OrbitApp.EARTH_AVERAGE_SUN_DISTANCE_IN_METERS, 0,
             OrbitApp.EARTH_RADIUS_IN_METERS * OrbitApp.EARTH_RADIUS_MAGNIFICATION_FACTOR, OrbitApp.EARTH_MASS_IN_KG);
         this.earth.addInfluence(this.sun);
         this.startOrbiting(this.earth);
-        this.earthElement = this.makeBodyElement("planet");
         this.bodies.push(this.earth);
-        this.bodyElements.push(this.earthElement);
+        this.bodyRepresentations.push(this.makeBodyRepresentation("planet", this.earth));
 
         this.moon = new Body(OrbitApp.EARTH_AVERAGE_SUN_DISTANCE_IN_METERS +
             OrbitApp.MOON_AVERAGE_EARTH_DISTANCE_IN_METERS, 0,
@@ -45,15 +52,8 @@ class OrbitApp {
         this.moon.addInfluence(this.sun);
         this.moon.addInfluence(this.earth);
         this.startOrbiting(this.moon);
-        this.moonElement = this.makeBodyElement("moon");
         this.bodies.push(this.moon);
-        this.bodyElements.push(this.moonElement);
-
-        this.widthInMeters = OrbitApp.DISPLAY_WIDTH_IN_METERS;
-        this.halfWidthInMeters = this.widthInMeters / 2;
-        this.halfHeightInMeters = 1 * this.halfWidthInMeters;  // will be overwritten soon when we resize the screen
-
-        this.resize();
+        this.bodyRepresentations.push(this.makeBodyRepresentation("moon", this.moon));
 
         this.updateCallback = this.update.bind(this);
         this.simulationElapsedTimeInSeconds = 0;
@@ -88,11 +88,23 @@ class OrbitApp {
         }
     }
 
-    makeBodyElement(className) {
-        const element = document.createElementNS(OrbitApp.SVG_NS, "circle");
-        element.classList.add(className);
-        this.svg.appendChild(element);
-        return element;
+    /**
+     * @param {string} className
+     * @param {Body} body
+     * @return {BodyRepresentation}
+     */
+    makeBodyRepresentation(className, body) {
+        const pathElement = document.createElementNS(OrbitApp.SVG_NS, "path");
+        pathElement.classList.add(className);
+        this.svg.appendChild(pathElement);
+
+        const bodyElement = document.createElementNS(OrbitApp.SVG_NS, "circle");
+        bodyElement.classList.add(className);
+        this.svg.appendChild(bodyElement);
+
+        const bodyRepresentation = new BodyRepresentation(bodyElement, pathElement, OrbitApp.PATH_LENGTH_IN_STEPS);
+        bodyRepresentation.addPointToPath(this.scaleX(body.position.x), this.scaleY(body.position.y));
+        return bodyRepresentation;
     }
 
     update(timestamp) {
@@ -104,8 +116,18 @@ class OrbitApp {
         // test bodies
         for (let i = 0; i < this.bodies.length; i++) {
             const body = this.bodies[i];
-            this.updateOrbit(body, scaledTimeDelta);
-            this.drawBody(body, this.bodyElements[i]);
+            const representation = this.bodyRepresentations[i];
+            const distanceTraveledInMeters = this.updateOrbit(body, scaledTimeDelta);
+
+            representation.accruePositionDeltaInMeters(distanceTraveledInMeters);
+            if (this.lengthX(representation.getAccruedPositionDeltaInMeters()) > OrbitApp.SIGNIFICANT_PATH_DELTA_IN_PIXELS) {
+                representation.addPointToPath(this.scaleX(body.position.x), this.scaleY(body.position.y));
+                representation.resetPositionDeltaInMeters();
+                representation.clearLatestPoint();
+            } else {
+                representation.setLatestPoint(this.scaleX(body.position.x), this.scaleY(body.position.y));
+            }
+            this.drawBody(body, representation);
         }
 
         // metrics
@@ -124,6 +146,7 @@ class OrbitApp {
      *
      * @param {Body} body - the body to be updated
      * @param {number} scaledTimeDelta - how much time has elapsed since last update
+     * @return {number} distance traveled on this update
      */
     updateOrbit(body, scaledTimeDelta) {
         // take each influence into account
@@ -141,16 +164,19 @@ class OrbitApp {
         // update position based on calculated velocity over time
         this.auxiliaryVector.set(body.velocity).scale(scaledTimeDelta);
         body.position.add(this.auxiliaryVector);
+
+        return this.auxiliaryVector.length();
     }
 
     /**
      * @param {Body} body
-     * @param {Element} element
+     * @param {BodyRepresentation} bodyRepresentation
      */
-    drawBody(body, element) {
-        element.setAttribute("cx", this.scaleX(body.position.x).toString());
-        element.setAttribute("cy", this.scaleY(body.position.y).toString());
-        element.setAttribute("r", this.widthX(body.radius).toString());
+    drawBody(body, bodyRepresentation) {
+        bodyRepresentation.getBodyElement().setAttribute("cx", this.scaleX(body.position.x).toString());
+        bodyRepresentation.getBodyElement().setAttribute("cy", this.scaleY(body.position.y).toString());
+        bodyRepresentation.getBodyElement().setAttribute("r", this.lengthX(body.radius).toString());
+        bodyRepresentation.getPathElement().setAttribute("d", bodyRepresentation.getPath());
     }
 
     /**
@@ -167,8 +193,14 @@ class OrbitApp {
         this.svg.setAttribute("width", window.innerWidth.toString());
         this.svg.setAttribute("height", window.innerHeight.toString());
 
+        for (const representation of this.bodyRepresentations) {
+            representation.resetPath();
+        }
+
         // sun will be static
-        this.drawBody(this.sun, this.sunElement);
+        if (this.sun) {
+            this.drawBody(this.sun, this.sunRepresentation);
+        }
     }
 
     /**
@@ -182,12 +214,12 @@ class OrbitApp {
     }
 
     /**
-     * Convert a width in meters to a width in pixels.
+     * Convert a length in meters to a length in pixels.
      *
-     * @param {number} w - width in meters
-     * @return {number} width in pixels
+     * @param {number} w - length in meters
+     * @return {number} length in pixels
      */
-    widthX(w) {
+    lengthX(w) {
         return this.scaleX(w) - this.scaleX(0);
     }
 
@@ -204,8 +236,11 @@ class OrbitApp {
 
 OrbitApp.SVG_NS = "http://www.w3.org/2000/svg";
 OrbitApp.DISPLAY_WIDTH_IN_METERS = 800e9;
+OrbitApp.SIGNIFICANT_PATH_DELTA_IN_PIXELS = 4;
+OrbitApp.PATH_LENGTH_IN_STEPS = 1024;  // must be power of two
 OrbitApp.TIME_FACTOR = 30 * 24 * 60 * 60;  // 1 month in milliseconds
-OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 200;
+OrbitApp.MINIMUM_FPS = 20;
+OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 1/OrbitApp.MINIMUM_FPS * 1000;
 OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS = 200;
 
 OrbitApp.MOON_RADIUS_MAGNIFICATION_FACTOR = 600;
@@ -225,4 +260,4 @@ OrbitApp.SUN_RADIUS_IN_METERS = 695700e3;
 
 OrbitApp.GRAVITATIONAL_CONSTANT = 6.67408e-11;
 
-new OrbitApp();
+window.addEventListener("load", () => new OrbitApp());
