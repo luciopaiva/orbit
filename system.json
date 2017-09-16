@@ -1,0 +1,42 @@
+{
+  "name": "Sun",
+  "color": "yellow",
+  "massInKg": 1988500e24,
+  "orbitRadiusInMeters": 0,
+  "orbitRadiusMagnificationFactor": 1,
+  "radiusInMeters": 695700e3,
+  "radiusMagnificationFactor": 15,
+  "satellites": [
+    {
+      "name": "Earth",
+      "color": "blue",
+      "massInKg": 5.972e24,
+      "orbitRadiusInMeters": 149.6e9,
+      "orbitRadiusMagnificationFactor": 1,
+      "radiusInMeters": 6371e3,
+      "radiusMagnificationFactor": 600,
+      "satellites": [
+        {
+          "name": "Moon",
+          "color": "gray",
+          "massInKg": 0.07346e24,
+          "orbitRadiusInMeters": 0.3844e9,
+          "orbitRadiusMagnificationFactor": 10,
+          "radiusInMeters": 1738.1e3,
+          "radiusMagnificationFactor": 600,
+          "satellites": []
+        }
+      ]
+    },
+    {
+      "name": "Mars",
+      "color": "red",
+      "massInKg": 0.64171e24,
+      "orbitRadiusInMeters": 227.9e9,
+      "orbitRadiusMagnificationFactor": 1,
+      "radiusInMeters": 3396.2e3,
+      "radiusMagnificationFactor": 600,
+      "satellites": []
+    }
+  ]
+}

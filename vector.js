@@ -8,7 +8,7 @@ class Vector {
      * @param {number} [y]
      */
     constructor (x = 0, y = 0) {
-        this.set(...arguments);
+        this.set(x, y);
     }
 
     /**

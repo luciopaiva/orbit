@@ -1,9 +1,23 @@
 "use strict";
 
+/**
+ * @typedef {Object} BodyFacts
+ * @property {string} name
+ * @property {string} color
+ * @property {number} massInKg
+ * @property {number} orbitRadiusInMeters
+ * @property {number} orbitRadiusMagnificationFactor
+ * @property {number} radiusInMeters
+ * @property {number} radiusMagnificationFactor
+ * @property {BodyFacts[]} satellites
+ */
 
 class OrbitApp {
 
-    constructor () {
+    /**
+     * @param {BodyFacts} star
+     */
+    constructor (star) {
         /** @type {Vector} */
         this.auxiliaryVector = new Vector();
         /** @type {Vector} */
@@ -15,12 +29,14 @@ class OrbitApp {
         this.metricsTable = document.getElementById("metrics");
         this.metricsCallbacks = [];
         this.addMetric("Elapsed", () => this.simulationElapsedTimeInSeconds.toFixed(1) + " months");
-        this.addMetric("Earth orbit speed", () => this.earth.velocity.length().toFixed(1) + " m/s");
-        this.addMetric("Earth-Sun distance", () => this.orbitRadiusVector.set(
-            this.earth.position).subtract(this.sun.position).scale(1e-6).length().toFixed(1) + " Mm");
-        this.addMetric("Moon orbit speed", () => this.moon.velocity.length().toFixed(1) + " m/s");
-        this.addMetric("Moon-Earth distance", () => this.orbitRadiusVector.set(
-            this.moon.position).subtract(this.earth.position).scale(1e-6).length().toFixed(1) + " Mm");
+
+        // ToDo bring back these metrics
+        // this.addMetric("Earth orbit speed", () => this.earth.velocity.length().toFixed(1) + " m/s");
+        // this.addMetric("Earth-Sun distance", () => this.orbitRadiusVector.set(
+        //     this.earth.position).subtract(this.sun.position).scale(1e-6).length().toFixed(1) + " Mm");
+        // this.addMetric("Moon orbit speed", () => this.moon.velocity.length().toFixed(1) + " m/s");
+        // this.addMetric("Moon-Earth distance", () => this.orbitRadiusVector.set(
+        //     this.moon.position).subtract(this.earth.position).scale(1e-6).length().toFixed(1) + " Mm");
 
         this.widthInMeters = OrbitApp.DISPLAY_WIDTH_IN_METERS;
         this.halfWidthInMeters = this.widthInMeters / 2;
@@ -34,32 +50,47 @@ class OrbitApp {
         window.addEventListener("resize", () => this.resize());
         this.resize();
 
-        this.sun = new Body(0, 0, OrbitApp.SUN_RADIUS_IN_METERS * OrbitApp.SUN_RADIUS_MAGNIFICATION_FACTOR,
-            OrbitApp.SUN_MASS_IN_KG);
-        this.sunRepresentation = this.makeBodyRepresentation("star", this.sun);
+        this.sun = new Body(0, 0, star.radiusInMeters * star.radiusMagnificationFactor, star.massInKg);
+        this.sunRepresentation = this.makeBodyRepresentation(star.color, this.sun);
         this.drawBody(this.sun, this.sunRepresentation);
 
-        this.earth = new Body(OrbitApp.EARTH_AVERAGE_SUN_DISTANCE_IN_METERS, 0,
-            OrbitApp.EARTH_RADIUS_IN_METERS * OrbitApp.EARTH_RADIUS_MAGNIFICATION_FACTOR, OrbitApp.EARTH_MASS_IN_KG);
-        this.earth.addInfluence(this.sun);
-        this.startOrbiting(this.earth);
-        this.bodies.push(this.earth);
-        this.bodyRepresentations.push(this.makeBodyRepresentation("planet", this.earth));
-
-        this.moon = new Body(OrbitApp.EARTH_AVERAGE_SUN_DISTANCE_IN_METERS +
-            OrbitApp.MOON_AVERAGE_EARTH_DISTANCE_IN_METERS, 0,
-            OrbitApp.MOON_RADIUS_IN_METERS * OrbitApp.MOON_RADIUS_MAGNIFICATION_FACTOR, OrbitApp.MOON_MASS_IN_KG);
-        this.moon.addInfluence(this.sun);
-        this.moon.addInfluence(this.earth);
-        this.startOrbiting(this.moon);
-        this.bodies.push(this.moon);
-        this.bodyRepresentations.push(this.makeBodyRepresentation("moon", this.moon));
+        this.processSatellites(new Vector(0, 0), star.satellites, this.sun);
 
         this.updateCallback = this.update.bind(this);
         this.simulationElapsedTimeInSeconds = 0;
         this.previousTimestamp = performance.now();
         this.nextTimeShouldUpdateMetrics = this.previousTimestamp;
         window.requestAnimationFrame(this.update.bind(this, this.previousTimestamp));
+    }
+
+    /**
+     * @param {Vector} orbitBasePoint
+     * @param {BodyFacts[]} satellites
+     * @param {Body} influences
+     */
+    processSatellites(orbitBasePoint, satellites, ...influences) {
+        if (!Array.isArray(satellites)) {
+            return;
+        }
+
+        for (const planetDefinition of satellites) {
+            console.info(`Processing ${planetDefinition.name}...`);
+            const startingPointX = orbitBasePoint.x +
+                planetDefinition.orbitRadiusInMeters * planetDefinition.orbitRadiusMagnificationFactor;
+            const startingPointY = orbitBasePoint.y;
+            const planet = new Body(startingPointX, startingPointY,
+                planetDefinition.radiusInMeters * planetDefinition.radiusMagnificationFactor,
+                planetDefinition.massInKg);
+            for (const influence of influences) {
+                planet.addInfluence(influence);
+            }
+            this.startOrbiting(planet);
+            this.bodies.push(planet);
+            this.bodyRepresentations.push(this.makeBodyRepresentation(planetDefinition.color, planet));
+            const newOrbitBasePoint = new Vector();
+            this.processSatellites(newOrbitBasePoint.add(orbitBasePoint).add(planet.position),
+                planetDefinition.satellites, ...influences, planet);
+        }
     }
 
     addMetric(title, callback) {
@@ -89,17 +120,16 @@ class OrbitApp {
     }
 
     /**
-     * @param {string} className
+     * @param {string} color
      * @param {Body} body
      * @return {BodyRepresentation}
      */
-    makeBodyRepresentation(className, body) {
+    makeBodyRepresentation(color, body) {
         const pathElement = document.createElementNS(OrbitApp.SVG_NS, "path");
-        pathElement.classList.add(className);
         this.svg.appendChild(pathElement);
 
         const bodyElement = document.createElementNS(OrbitApp.SVG_NS, "circle");
-        bodyElement.classList.add(className);
+        bodyElement.style.fill = color;
         this.svg.appendChild(bodyElement);
 
         const bodyRepresentation = new BodyRepresentation(bodyElement, pathElement, OrbitApp.PATH_LENGTH_IN_STEPS);
@@ -242,22 +272,15 @@ OrbitApp.TIME_FACTOR = 30 * 24 * 60 * 60;  // 1 month in milliseconds
 OrbitApp.MINIMUM_FPS = 20;
 OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 1/OrbitApp.MINIMUM_FPS * 1000;
 OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS = 200;
-
-OrbitApp.MOON_RADIUS_MAGNIFICATION_FACTOR = 600;
-OrbitApp.MOON_ORBIT_RADIUS_MAGNIFICATION_FACTOR = 20;
-OrbitApp.MOON_AVERAGE_EARTH_DISTANCE_IN_METERS = 0.3844e9;
-OrbitApp.MOON_MASS_IN_KG = 0.07346e24;
-OrbitApp.MOON_RADIUS_IN_METERS = 1738.1e3;
-
-OrbitApp.EARTH_RADIUS_MAGNIFICATION_FACTOR = 600;
-OrbitApp.EARTH_AVERAGE_SUN_DISTANCE_IN_METERS = 149.6e9;
-OrbitApp.EARTH_MASS_IN_KG = 5.972e24;
-OrbitApp.EARTH_RADIUS_IN_METERS = 6371e3;
-
-OrbitApp.SUN_RADIUS_MAGNIFICATION_FACTOR = 15;
-OrbitApp.SUN_MASS_IN_KG = 1988500e24;
-OrbitApp.SUN_RADIUS_IN_METERS = 695700e3;
-
 OrbitApp.GRAVITATIONAL_CONSTANT = 6.67408e-11;
 
-window.addEventListener("load", () => new OrbitApp());
+window.addEventListener("load", () => {
+    const ajax = new XMLHttpRequest();
+    ajax.addEventListener("readystatechange", function () {
+        if (this.readyState === 4 && this.status === 200) {
+            new OrbitApp(JSON.parse(this.responseText));
+        }
+    });
+    ajax.open("GET", "system.json", true);
+    ajax.send();
+});
