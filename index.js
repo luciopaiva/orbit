@@ -15,11 +15,17 @@ class OrbitApp {
         this.metricsTable = document.getElementById("metrics");
         this.metricsCallbacks = [];
         this.addMetric("Elapsed", () => this.simulationElapsedTimeInSeconds.toFixed(1) + " months");
-        this.addMetric("Earth speed", () => this.earth.velocity.length().toFixed(1) + " m/s");
-        this.addMetric("Earth distance", () => this.orbitRadiusVector.set(
+        this.addMetric("Earth orbit speed", () => this.earth.velocity.length().toFixed(1) + " m/s");
+        this.addMetric("Earth-Sun distance", () => this.orbitRadiusVector.set(
             this.earth.position).subtract(this.sun.position).scale(1e-6).length().toFixed(1) + " Mm");
+        this.addMetric("Moon orbit speed", () => this.moon.velocity.length().toFixed(1) + " m/s");
+        this.addMetric("Moon-Earth distance", () => this.orbitRadiusVector.set(
+            this.moon.position).subtract(this.earth.position).scale(1e-6).length().toFixed(1) + " Mm");
 
         window.addEventListener("resize", () => this.resize());
+
+        this.bodies = [];
+        this.bodyElements = [];
 
         this.sun = new Body(0, 0, OrbitApp.SUN_RADIUS_IN_METERS * OrbitApp.SUN_RADIUS_MAGNIFICATION_FACTOR,
             OrbitApp.SUN_MASS_IN_KG);
@@ -27,16 +33,21 @@ class OrbitApp {
 
         this.earth = new Body(OrbitApp.EARTH_AVERAGE_SUN_DISTANCE_IN_METERS, 0,
             OrbitApp.EARTH_RADIUS_IN_METERS * OrbitApp.EARTH_RADIUS_MAGNIFICATION_FACTOR, OrbitApp.EARTH_MASS_IN_KG);
-        this.startOrbiting(this.earth, [this.sun]);
+        this.earth.addInfluence(this.sun);
+        this.startOrbiting(this.earth);
         this.earthElement = this.makeBodyElement("planet");
+        this.bodies.push(this.earth);
+        this.bodyElements.push(this.earthElement);
 
-        this.moon = new Body(OrbitApp.EARTH_AVERAGE_SUN_DISTANCE_IN_METERS + 20 * OrbitApp.MOON_AVERAGE_EARTH_DISTANCE_IN_METERS, 0,
+        this.moon = new Body(OrbitApp.EARTH_AVERAGE_SUN_DISTANCE_IN_METERS +
+            OrbitApp.MOON_AVERAGE_EARTH_DISTANCE_IN_METERS, 0,
             OrbitApp.MOON_RADIUS_IN_METERS * OrbitApp.MOON_RADIUS_MAGNIFICATION_FACTOR, OrbitApp.MOON_MASS_IN_KG);
-        this.startOrbiting(this.moon, [this.sun, this.earth]);
+        this.moon.addInfluence(this.sun);
+        this.moon.addInfluence(this.earth);
+        this.startOrbiting(this.moon);
         this.moonElement = this.makeBodyElement("moon");
-
-        this.bodies = [];
-        this.bodyElements = [];
+        this.bodies.push(this.moon);
+        this.bodyElements.push(this.moonElement);
 
         this.widthInMeters = OrbitApp.DISPLAY_WIDTH_IN_METERS;
         this.halfWidthInMeters = this.widthInMeters / 2;
@@ -65,11 +76,10 @@ class OrbitApp {
     /**
      * Calculates the velocity vector necessary for the orbiter to keep a steady, circular orbit around the orbitee.
      * @param {Body} orbiter - the body that will rotate around orbitee
-     * @param {Body[]} influences - the bodies that will be orbited by orbiter
      */
-    startOrbiting(orbiter, influences) {
+    startOrbiting(orbiter) {
         orbiter.velocity.clear();
-        for (const influence of influences) {
+        for (const influence of orbiter.getInfluences()) {
             const r = this.auxiliaryVector.set(orbiter.position).subtract(influence.position).length();
             // ToDo calculate perpendicular angle
             const vy = Math.sqrt(OrbitApp.GRAVITATIONAL_CONSTANT * influence.mass / r);
@@ -91,18 +101,10 @@ class OrbitApp {
         const dtInSecs = dt / 1000;
         const scaledTimeDelta = dtInSecs * OrbitApp.TIME_FACTOR;
 
-        // earth
-        this.updateOrbit(this.earth, [this.sun], scaledTimeDelta);
-        this.drawBody(this.earth, this.earthElement);
-
-        // moon
-        this.updateOrbit(this.moon, [this.sun, this.earth], scaledTimeDelta);
-        this.drawBody(this.moon, this.moonElement);
-
         // test bodies
         for (let i = 0; i < this.bodies.length; i++) {
             const body = this.bodies[i];
-            this.updateOrbit(body, [this.sun, this.earth], scaledTimeDelta);
+            this.updateOrbit(body, scaledTimeDelta);
             this.drawBody(body, this.bodyElements[i]);
         }
 
@@ -121,12 +123,11 @@ class OrbitApp {
      * Calculate influence forces acting upon body and update its position.
      *
      * @param {Body} body - the body to be updated
-     * @param {Body[]} influences - bodies that exert influence over body
      * @param {number} scaledTimeDelta - how much time has elapsed since last update
      */
-    updateOrbit(body, influences, scaledTimeDelta) {
+    updateOrbit(body, scaledTimeDelta) {
         // take each influence into account
-        for (const influence of influences) {
+        for (const influence of body.getInfluences()) {
             const orbitRadius = Math.max(influence.radius,  // draw minimum radius allowed to prevent overshooting
                 this.orbitRadiusVector.set(body.position).subtract(influence.position).length());
             const gravityPullAcceleration = OrbitApp.GRAVITATIONAL_CONSTANT * influence.mass /
@@ -147,9 +148,9 @@ class OrbitApp {
      * @param {Element} element
      */
     drawBody(body, element) {
-        element.setAttribute("cx", this.scaleX(body.position.x));
-        element.setAttribute("cy", this.scaleY(body.position.y));
-        element.setAttribute("r", this.widthX(body.radius));
+        element.setAttribute("cx", this.scaleX(body.position.x).toString());
+        element.setAttribute("cy", this.scaleY(body.position.y).toString());
+        element.setAttribute("r", this.widthX(body.radius).toString());
     }
 
     /**
@@ -204,10 +205,11 @@ class OrbitApp {
 OrbitApp.SVG_NS = "http://www.w3.org/2000/svg";
 OrbitApp.DISPLAY_WIDTH_IN_METERS = 800e9;
 OrbitApp.TIME_FACTOR = 30 * 24 * 60 * 60;  // 1 month in milliseconds
-OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 1000;
+OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 200;
 OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS = 200;
 
 OrbitApp.MOON_RADIUS_MAGNIFICATION_FACTOR = 600;
+OrbitApp.MOON_ORBIT_RADIUS_MAGNIFICATION_FACTOR = 20;
 OrbitApp.MOON_AVERAGE_EARTH_DISTANCE_IN_METERS = 0.3844e9;
 OrbitApp.MOON_MASS_IN_KG = 0.07346e24;
 OrbitApp.MOON_RADIUS_IN_METERS = 1738.1e3;

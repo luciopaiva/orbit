@@ -15,5 +15,20 @@ class Body {
         this.mass = mass;
         this.position = new Vector(x, y);
         this.velocity = new Vector(0, 0);
+        this.influences = [];
+    }
+
+    /**
+     * @param {Body} otherBody
+     */
+    addInfluence(otherBody) {
+        this.influences.push(otherBody);
+    }
+
+    /**
+     * @return Body[]
+     */
+    getInfluences() {
+        return this.influences;
     }
 }
