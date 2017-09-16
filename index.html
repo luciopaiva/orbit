@@ -7,6 +7,8 @@
     <style>
         :root {
             box-sizing: border-box;
+            font-family: monospace, sans-serif;
+            font-size: 10pt;
         }
 
         html, body {
@@ -16,22 +18,30 @@
             background-color: black;
         }
 
-        #sun {
+        .star {
             fill: yellow;
         }
 
-        #earth {
+        .planet {
             fill: blue;
+        }
+
+        #metrics {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #7b7b7b;
         }
     </style>
 </head>
 <body>
 
-<svg id="universe">
-    <circle id="sun"></circle>
-    <circle id="earth"></circle>
-</svg>
+<svg id="universe"></svg>
 
+<table id="metrics"></table>
+
+<script src="vector.js"></script>
+<script src="body.js"></script>
 <script src="index.js"></script>
 </body>
 </html>
