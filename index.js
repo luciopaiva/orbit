@@ -265,7 +265,7 @@ class OrbitApp {
 }
 
 OrbitApp.SVG_NS = "http://www.w3.org/2000/svg";
-OrbitApp.DISPLAY_WIDTH_IN_METERS = 800e9;
+OrbitApp.DISPLAY_WIDTH_IN_METERS = 1600e9;
 OrbitApp.SIGNIFICANT_PATH_DELTA_IN_PIXELS = 4;
 OrbitApp.PATH_LENGTH_IN_STEPS = 1024;  // must be power of two
 OrbitApp.TIME_FACTOR = 30 * 24 * 60 * 60;  // 1 month in milliseconds

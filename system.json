@@ -8,6 +8,26 @@
   "radiusMagnificationFactor": 15,
   "satellites": [
     {
+      "name": "Mercury",
+      "color": "red",
+      "massInKg": 0.33011e24,
+      "orbitRadiusInMeters": 57.91e9,
+      "orbitRadiusMagnificationFactor": 1,
+      "radiusInMeters": 2440e3,
+      "radiusMagnificationFactor": 600,
+      "satellites": []
+    },
+    {
+      "name": "Venus",
+      "color": "beige",
+      "massInKg": 4.8675e24,
+      "orbitRadiusInMeters": 108.2e9,
+      "orbitRadiusMagnificationFactor": 1,
+      "radiusInMeters": 6051.8e3,
+      "radiusMagnificationFactor": 600,
+      "satellites": []
+    },
+    {
       "name": "Earth",
       "color": "blue",
       "massInKg": 5.972e24,
@@ -35,6 +55,46 @@
       "orbitRadiusInMeters": 227.9e9,
       "orbitRadiusMagnificationFactor": 1,
       "radiusInMeters": 3396.2e3,
+      "radiusMagnificationFactor": 600,
+      "satellites": []
+    },
+    {
+      "name": "Jupiter",
+      "color": "brown",
+      "massInKg": 1.898e27,
+      "orbitRadiusInMeters": 778.5e9,
+      "orbitRadiusMagnificationFactor": 1,
+      "radiusInMeters": 69911e3,
+      "radiusMagnificationFactor": 600,
+      "satellites": []
+    },
+    {
+      "name": "Saturn",
+      "color": "#ccc",
+      "massInKg": 5.863e26,
+      "orbitRadiusInMeters": 1429e9,
+      "orbitRadiusMagnificationFactor": 1,
+      "radiusInMeters": 58232e3,
+      "radiusMagnificationFactor": 600,
+      "satellites": []
+    },
+    {
+      "name": "Uranus",
+      "color": "cyan",
+      "massInKg": 8.6810e25,
+      "orbitRadiusInMeters": 2871e9,
+      "orbitRadiusMagnificationFactor": 1,
+      "radiusInMeters": 25362e3,
+      "radiusMagnificationFactor": 600,
+      "satellites": []
+    },
+    {
+      "name": "Neptune",
+      "color": "#00c",
+      "massInKg": 1.024e26,
+      "orbitRadiusInMeters": 4498e9,
+      "orbitRadiusMagnificationFactor": 1,
+      "radiusInMeters": 24622e3,
       "radiusMagnificationFactor": 600,
       "satellites": []
     }
