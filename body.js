@@ -14,6 +14,6 @@ class Body {
         this.radius = radius;
         this.mass = mass;
         this.position = new Vector(x, y);
-        this.velocity = new Vector();
+        this.velocity = new Vector(0, 0);
     }
 }
