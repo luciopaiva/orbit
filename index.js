@@ -28,7 +28,16 @@ class OrbitApp {
         this.svg = document.getElementById("universe");
         this.metricsTable = document.getElementById("metrics");
         this.metricsCallbacks = [];
-        this.addMetric("Elapsed", () => this.simulationElapsedTimeInSeconds.toFixed(1) + " months");
+        this.addMetric("Elapsed", () => {
+            // each second is equivalent to 1 month
+            const elapsedInMonths = this.simulationElapsedTimeInSeconds;
+            if (elapsedInMonths < 11) {
+                return elapsedInMonths.toFixed(1) + " months";
+            } else {
+                const elapsedInYears = elapsedInMonths / 12;
+                return elapsedInYears.toFixed(1) + " years";
+            }
+        });
 
         // ToDo bring back these metrics
         // this.addMetric("Earth orbit speed", () => this.earth.velocity.length().toFixed(1) + " m/s");
