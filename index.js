@@ -14,11 +14,7 @@ class OrbitApp {
         this.svg = document.getElementById("universe");
         this.metricsTable = document.getElementById("metrics");
         this.metricsCallbacks = [];
-        this.addMetric("Elapsed", () => {
-            const elapsedMillis = this.previousTimestamp - this.timeSimulationStarted;
-            const simulationMonths = elapsedMillis / 1000;
-            return simulationMonths.toFixed(1) + " months"
-        });
+        this.addMetric("Elapsed", () => this.simulationElapsedTimeInSeconds.toFixed(1) + " months");
         this.addMetric("Earth speed", () => this.earth.velocity.length().toFixed(1) + " m/s");
         this.addMetric("Earth distance", () => this.orbitRadiusVector.set(
             this.earth.position).subtract(this.sun.position).scale(1e-6).length().toFixed(1) + " Mm");
@@ -44,8 +40,8 @@ class OrbitApp {
         this.resize();
 
         this.updateCallback = this.update.bind(this);
-        this.timeSimulationStarted = performance.now();
-        this.previousTimestamp = this.timeSimulationStarted;
+        this.simulationElapsedTimeInSeconds = 0;
+        this.previousTimestamp = performance.now();
         this.nextTimeShouldUpdateMetrics = this.previousTimestamp;
         window.requestAnimationFrame(this.update.bind(this, this.previousTimestamp));
     }
@@ -68,6 +64,7 @@ class OrbitApp {
      */
     orbitAround(orbiter, orbitee) {
         const r = this.auxiliaryVector.set(orbiter.position).subtract(orbitee.position).length();
+        // ToDo calculate perpendicular angle
         const vy = Math.sqrt(OrbitApp.GRAVITATIONAL_CONSTANT * orbitee.mass / r);
         const v = new Vector(0, vy);
         orbiter.velocity.set(v);
@@ -81,8 +78,8 @@ class OrbitApp {
     }
 
     update(timestamp) {
-        // each real second is equivalent to 1 month of simulation
-        const dt = timestamp - this.previousTimestamp;
+        // each real second is equivalent to 1 month of simulation - avoid big gaps which can destabilize the simulation
+        const dt = Math.min(OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS, timestamp - this.previousTimestamp);
         const dtInSecs = dt / 1000;
         const scaledTimeDelta = dtInSecs * OrbitApp.TIME_FACTOR;
 
@@ -108,6 +105,7 @@ class OrbitApp {
             this.nextTimeShouldUpdateMetrics = timestamp + 200;
         }
 
+        this.simulationElapsedTimeInSeconds += dtInSecs;
         this.previousTimestamp = timestamp;
         window.requestAnimationFrame(this.updateCallback);
     }
@@ -149,6 +147,7 @@ class OrbitApp {
 OrbitApp.SVG_NS = "http://www.w3.org/2000/svg";
 OrbitApp.DISPLAY_WIDTH_IN_METERS = 800e9;
 OrbitApp.TIME_FACTOR = 30 * 24 * 60 * 60;  // 1 month in seconds
+OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 1000;
 OrbitApp.EARTH_RADIUS_MAGNIFICATION_FACTOR = 600;
 OrbitApp.EARTH_AVERAGE_SUN_DISTANCE_IN_METERS = 149.6e9;
 OrbitApp.EARTH_MASS_IN_KG = 5.972e24;
