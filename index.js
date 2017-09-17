@@ -30,7 +30,7 @@ class OrbitApp {
         this.metricsCallbacks = [];
         this.addMetric("Elapsed", () => {
             // each second is equivalent to 1 month
-            const elapsedInMonths = this.simulationElapsedTimeInSeconds;
+            const elapsedInMonths = this.simulationElapsedTimeInSeconds / OrbitApp.ONE_SIMULATION_MONTH;
             if (elapsedInMonths < 11) {
                 return elapsedInMonths.toFixed(1) + " months";
             } else {
@@ -38,6 +38,7 @@ class OrbitApp {
                 return elapsedInYears.toFixed(1) + " years";
             }
         });
+        this.addMetric("Time scale", () => OrbitApp.TIME_SCALE_DESC[this.timeScaleIndex] + " per second");
 
         // ToDo bring back these metrics
         // this.addMetric("Earth orbit speed", () => this.earth.velocity.length().toFixed(1) + " m/s");
@@ -49,6 +50,9 @@ class OrbitApp {
 
         this.adjustSpaceWidth();
         document.addEventListener("wheel", this.onMouseWheel.bind(this));
+
+        this.timeScaleIndex = 1;
+        document.addEventListener("keyup", this.onKeyUp.bind(this));
 
         /** @type {Body[]} */
         this.bodies = [];
@@ -64,11 +68,11 @@ class OrbitApp {
 
         this.processSatellites(new Vector(0, 0), star.satellites, this.sun);
 
-        this.updateCallback = this.update.bind(this);
+        this.updateCallback = this.updateSimulation.bind(this);
         this.simulationElapsedTimeInSeconds = 0;
         this.previousTimestamp = performance.now();
         this.nextTimeShouldUpdateMetrics = this.previousTimestamp;
-        window.requestAnimationFrame(this.update.bind(this, this.previousTimestamp));
+        window.requestAnimationFrame(this.updateSimulation.bind(this, this.previousTimestamp));
     }
 
     onMouseWheel(e) {
@@ -79,6 +83,18 @@ class OrbitApp {
         const zoomFactor = zoomDirection * OrbitApp.ZOOM_CONSTANT_IN_METERS;
         this.adjustSpaceWidth(zoomFactor);
         this.resize();
+    }
+
+    onKeyUp(e) {
+        if (e.key === ',') {
+            // slow down
+            this.timeScaleIndex = this.timeScaleIndex > 0 ? this.timeScaleIndex - 1 : this.timeScaleIndex;
+        } else if (e.key === '.') {
+            // speed up
+            this.timeScaleIndex = this.timeScaleIndex === OrbitApp.TIME_SCALE.length - 1 ?
+                this.timeScaleIndex : this.timeScaleIndex + 1;
+        }
+
     }
 
     adjustSpaceWidth(delta = 0) {
@@ -168,27 +184,36 @@ class OrbitApp {
         return bodyRepresentation;
     }
 
-    update(timestamp) {
+    updateSimulation(timestamp) {
         // each real second is equivalent to 1 month of simulation - avoid big gaps which can destabilize the simulation
         const dt = Math.min(OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS, timestamp - this.previousTimestamp);
         const dtInSecs = dt / 1000;
-        const scaledTimeDelta = dtInSecs * OrbitApp.TIME_FACTOR;
+        const totalScaledTimeDelta = dtInSecs * OrbitApp.TIME_SCALE[this.timeScaleIndex];
+        let remainingScaledTimeDelta = totalScaledTimeDelta;
 
-        // test bodies
-        for (let i = 0; i < this.bodies.length; i++) {
-            const body = this.bodies[i];
-            const representation = this.bodyRepresentations[i];
-            const distanceTraveledInMeters = this.updateOrbit(body, scaledTimeDelta);
+        // break elapsed time into manageable steps, otherwise simulation can become unstable
+        for (; remainingScaledTimeDelta > 0; remainingScaledTimeDelta -= OrbitApp.ONE_SIMULATION_DAY) {
+            const scaledTimeDelta = remainingScaledTimeDelta > OrbitApp.ONE_SIMULATION_DAY ?
+                OrbitApp.ONE_SIMULATION_DAY : remainingScaledTimeDelta;
 
-            representation.accruePositionDeltaInMeters(distanceTraveledInMeters);
-            if (this.lengthX(representation.getAccruedPositionDeltaInMeters()) > OrbitApp.SIGNIFICANT_PATH_DELTA_IN_PIXELS) {
-                representation.addPointToPath(this.scaleX(body.position.x), this.scaleY(body.position.y));
-                representation.resetPositionDeltaInMeters();
-                representation.clearLatestPoint();
-            } else {
-                representation.setLatestPoint(this.scaleX(body.position.x), this.scaleY(body.position.y));
+            for (let i = 0; i < this.bodies.length; i++) {
+                const body = this.bodies[i];
+                const representation = this.bodyRepresentations[i];
+                const distanceTraveledInMeters = this.updateOrbit(body, scaledTimeDelta);
+
+                representation.accruePositionDeltaInMeters(distanceTraveledInMeters);
+                if (this.lengthX(representation.getAccruedPositionDeltaInMeters()) > OrbitApp.SIGNIFICANT_PATH_DELTA_IN_PIXELS) {
+                    representation.addPointToPath(this.scaleX(body.position.x), this.scaleY(body.position.y));
+                    representation.resetPositionDeltaInMeters();
+                    representation.clearLatestPoint();
+                } else {
+                    representation.setLatestPoint(this.scaleX(body.position.x), this.scaleY(body.position.y));
+                }
             }
-            this.drawBody(body, representation);
+        }
+
+        for (let i = 0; i < this.bodies.length; i++) {
+            this.drawBody(this.bodies[i], this.bodyRepresentations[i]);
         }
 
         // metrics
@@ -197,7 +222,7 @@ class OrbitApp {
             this.nextTimeShouldUpdateMetrics = timestamp + OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS;
         }
 
-        this.simulationElapsedTimeInSeconds += dtInSecs;
+        this.simulationElapsedTimeInSeconds += totalScaledTimeDelta;
         this.previousTimestamp = timestamp;
         window.requestAnimationFrame(this.updateCallback);
     }
@@ -300,7 +325,13 @@ OrbitApp.DISPLAY_WIDTH_IN_METERS = 1600e9;
 OrbitApp.ZOOM_CONSTANT_IN_METERS = 400e9;
 OrbitApp.SIGNIFICANT_PATH_DELTA_IN_PIXELS = 4;
 OrbitApp.PATH_LENGTH_IN_STEPS = 1024;  // must be power of two
-OrbitApp.TIME_FACTOR = 30 * 24 * 60 * 60;  // 1 month in milliseconds
+OrbitApp.ONE_SIMULATION_DAY = 24 * 60 * 60;
+OrbitApp.ONE_SIMULATION_MONTH = 30 * OrbitApp.ONE_SIMULATION_DAY;
+OrbitApp.ONE_SIMULATION_YEAR = 12 * OrbitApp.ONE_SIMULATION_MONTH;
+OrbitApp.TIME_SCALE = [OrbitApp.ONE_SIMULATION_DAY, OrbitApp.ONE_SIMULATION_MONTH, 6 * OrbitApp.ONE_SIMULATION_MONTH,
+    OrbitApp.ONE_SIMULATION_YEAR, 10 * OrbitApp.ONE_SIMULATION_YEAR];
+OrbitApp.TIME_SCALE_DESC = ["One day", "One month", "Six months", "One year", "Ten years"];
+OrbitApp.TIME_FACTOR = 30 * OrbitApp.ONE_SIMULATION_DAY;  // 1 month in milliseconds
 OrbitApp.MINIMUM_FPS = 20;
 OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 1/OrbitApp.MINIMUM_FPS * 1000;
 OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS = 200;

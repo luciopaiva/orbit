@@ -9,6 +9,7 @@
             box-sizing: border-box;
             font-family: monospace, sans-serif;
             font-size: 10pt;
+            color: #7b7b7b;
         }
 
         html, body {
@@ -22,12 +23,26 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            color: #7b7b7b;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 10pt;
+            left: 38%;
         }
 
         path {
             fill: none;
             stroke: #3c3c3c;
+        }
+
+        kbd {
+            padding: 2px 6px;
+            color: black;
+            font-size: 100%;
+            background-color: lightgray;
+            border-radius: 3px;
+            box-shadow: 1px 1px 0 rgba(255,255,255,.45);
         }
     </style>
 </head>
@@ -36,6 +51,8 @@
 <svg id="universe"></svg>
 
 <table id="metrics"></table>
+
+<span id="instructions">Use <kbd>,</kbd> to slow down, <kbd>.</kbd> to speed up and the mouse wheel to zoom</span>
 
 <script src="vector.js"></script>
 <script src="body.js"></script>
