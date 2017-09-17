@@ -5,7 +5,7 @@
   "orbitRadiusInMeters": 0,
   "orbitRadiusMagnificationFactor": 1,
   "radiusInMeters": 695700e3,
-  "radiusMagnificationFactor": 15,
+  "radiusMagnificationFactor": 20,
   "satellites": [
     {
       "name": "Mercury",

@@ -47,9 +47,8 @@ class OrbitApp {
         // this.addMetric("Moon-Earth distance", () => this.orbitRadiusVector.set(
         //     this.moon.position).subtract(this.earth.position).scale(1e-6).length().toFixed(1) + " Mm");
 
-        this.widthInMeters = OrbitApp.DISPLAY_WIDTH_IN_METERS;
-        this.halfWidthInMeters = this.widthInMeters / 2;
-        this.halfHeightInMeters = 1 * this.halfWidthInMeters;  // will be overwritten soon when we resize the screen
+        this.adjustSpaceWidth();
+        document.addEventListener("wheel", this.onMouseWheel.bind(this));
 
         /** @type {Body[]} */
         this.bodies = [];
@@ -70,6 +69,29 @@ class OrbitApp {
         this.previousTimestamp = performance.now();
         this.nextTimeShouldUpdateMetrics = this.previousTimestamp;
         window.requestAnimationFrame(this.update.bind(this, this.previousTimestamp));
+    }
+
+    onMouseWheel(e) {
+        if (e.deltaY === 0) {
+            return;
+        }
+        const zoomDirection = e.deltaY / Math.abs(e.deltaY);
+        const zoomFactor = zoomDirection * OrbitApp.ZOOM_CONSTANT_IN_METERS;
+        this.adjustSpaceWidth(zoomFactor);
+        this.resize();
+    }
+
+    adjustSpaceWidth(delta = 0) {
+        if (!this.widthInMeters) {
+            this.widthInMeters = OrbitApp.DISPLAY_WIDTH_IN_METERS;
+        } else {
+            this.widthInMeters += delta;
+            if (this.widthInMeters < OrbitApp.ZOOM_CONSTANT_IN_METERS) {
+                this.widthInMeters = OrbitApp.ZOOM_CONSTANT_IN_METERS;
+            }
+        }
+        this.halfWidthInMeters = this.widthInMeters / 2;
+        this.halfHeightInMeters = 1 * this.halfWidthInMeters;  // will be overwritten soon when we resize the screen
     }
 
     /**
@@ -275,6 +297,7 @@ class OrbitApp {
 
 OrbitApp.SVG_NS = "http://www.w3.org/2000/svg";
 OrbitApp.DISPLAY_WIDTH_IN_METERS = 1600e9;
+OrbitApp.ZOOM_CONSTANT_IN_METERS = 400e9;
 OrbitApp.SIGNIFICANT_PATH_DELTA_IN_PIXELS = 4;
 OrbitApp.PATH_LENGTH_IN_STEPS = 1024;  // must be power of two
 OrbitApp.TIME_FACTOR = 30 * 24 * 60 * 60;  // 1 month in milliseconds
