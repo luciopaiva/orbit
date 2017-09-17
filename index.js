@@ -239,10 +239,10 @@ class OrbitApp {
     startOrbiting(orbiter) {
         orbiter.velocity.clear();
         for (const influence of orbiter.getInfluences()) {
-            const r = this.auxiliaryVector.set(orbiter.position).subtract(influence.position).length();
-            // ToDo calculate perpendicular angle
-            const vy = Math.sqrt(OrbitApp.GRAVITATIONAL_CONSTANT * influence.mass / r);
-            this.auxiliaryVector.set(0, vy);
+            this.auxiliaryVector.set(orbiter.position).subtract(influence.position);
+            const r = this.auxiliaryVector.length();
+            const centrifugalSpeed = Math.sqrt(OrbitApp.GRAVITATIONAL_CONSTANT * influence.mass / r);
+            this.auxiliaryVector.normalize().rotate(-OrbitApp.HALF_PI).scale(centrifugalSpeed);
             orbiter.velocity.add(this.auxiliaryVector);
         }
     }
@@ -441,6 +441,7 @@ OrbitApp.MINIMUM_FPS = 20;
 OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 1/OrbitApp.MINIMUM_FPS * 1000;
 OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS = 200;
 OrbitApp.GRAVITATIONAL_CONSTANT = 6.67408e-11;
+OrbitApp.HALF_PI = Math.PI / 2;
 OrbitApp.ASTEROID_COUNT = 100;
 
 window.addEventListener("load", () => {

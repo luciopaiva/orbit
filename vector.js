@@ -85,6 +85,20 @@ class Vector {
     }
 
     /**
+     * @param {number} angleInRadians - the angle to rotate, in radians
+     * @return {Vector} this vector
+     */
+    rotate(angleInRadians) {
+        const cosine = Math.cos(angleInRadians);
+        const sine = Math.sin(angleInRadians);
+        const x = this.x;
+        const y = this.y;
+        this.x = x * cosine - y * sine;
+        this.y = x * sine + y + cosine;
+        return this
+    }
+
+    /**
      * @return {number}
      */
     length() {
