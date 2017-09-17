@@ -9,7 +9,7 @@
   "satellites": [
     {
       "name": "Mercury",
-      "color": "red",
+      "color": "lightcoral",
       "massInKg": 0.33011e24,
       "orbitRadiusInMeters": 57.91e9,
       "orbitRadiusMagnificationFactor": 1,
@@ -19,7 +19,7 @@
     },
     {
       "name": "Venus",
-      "color": "beige",
+      "color": "khaki",
       "massInKg": 4.8675e24,
       "orbitRadiusInMeters": 108.2e9,
       "orbitRadiusMagnificationFactor": 1,
@@ -29,7 +29,7 @@
     },
     {
       "name": "Earth",
-      "color": "blue",
+      "color": "dodgerblue",
       "massInKg": 5.972e24,
       "orbitRadiusInMeters": 149.6e9,
       "orbitRadiusMagnificationFactor": 1,
@@ -50,7 +50,7 @@
     },
     {
       "name": "Mars",
-      "color": "red",
+      "color": "firebrick",
       "massInKg": 0.64171e24,
       "orbitRadiusInMeters": 227.9e9,
       "orbitRadiusMagnificationFactor": 1,
@@ -60,7 +60,7 @@
     },
     {
       "name": "Jupiter",
-      "color": "brown",
+      "color": "coral",
       "massInKg": 1.898e27,
       "orbitRadiusInMeters": 778.5e9,
       "orbitRadiusMagnificationFactor": 1,
@@ -70,7 +70,7 @@
     },
     {
       "name": "Saturn",
-      "color": "#ccc",
+      "color": "lemonchiffon",
       "massInKg": 5.863e26,
       "orbitRadiusInMeters": 1429e9,
       "orbitRadiusMagnificationFactor": 1,
@@ -90,7 +90,7 @@
     },
     {
       "name": "Neptune",
-      "color": "#00c",
+      "color": "blue",
       "massInKg": 1.024e26,
       "orbitRadiusInMeters": 4498e9,
       "orbitRadiusMagnificationFactor": 1,
