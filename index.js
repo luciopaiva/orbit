@@ -397,6 +397,6 @@ window.addEventListener("load", () => {
             new OrbitApp(JSON.parse(this.responseText));
         }
     });
-    ajax.open("GET", "system.json", true);
+    ajax.open("GET", "solar-system.json", true);
     ajax.send();
 });

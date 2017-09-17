@@ -1,0 +1,21 @@
+{
+  "name": "Sun",
+  "color": "yellow",
+  "massInKg": 1988500e24,
+  "orbitRadiusInMeters": 0,
+  "orbitRadiusMagnificationFactor": 1,
+  "radiusInMeters": 695700e3,
+  "radiusMagnificationFactor": 20,
+  "satellites": [
+    {
+      "name": "Earth",
+      "color": "blue",
+      "massInKg": 5.972e24,
+      "orbitRadiusInMeters": 149.6e9,
+      "orbitRadiusMagnificationFactor": 1,
+      "radiusInMeters": 6371e3,
+      "radiusMagnificationFactor": 600,
+      "satellites": []
+    }
+  ]
+}
