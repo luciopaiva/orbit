@@ -28,6 +28,7 @@ class OrbitApp {
         this.scaleXCallback = this.scaleX.bind(this);
         this.scaleYCallback = this.scaleY.bind(this);
 
+        this.instructions = document.getElementById("instructions");
         this.svg = document.getElementById("universe");
         this.metricsTable = document.getElementById("metrics");
         this.metricsCallbacks = [];
@@ -42,6 +43,8 @@ class OrbitApp {
             }
         });
         this.addMetric("Time scale", () => OrbitApp.TIME_SCALE_DESC[this.timeScaleIndex] + " per second");
+
+        this.arePathsVisible = true;
 
         // ToDo bring back these metrics
         // this.addMetric("Earth orbit speed", () => this.earth.velocity.length().toFixed(1) + " m/s");
@@ -105,17 +108,41 @@ class OrbitApp {
     }
 
     onKeyUp(e) {
-        if (e.key === ',') {
-            // slow down
-            this.timeScaleIndex = this.timeScaleIndex > 0 ? this.timeScaleIndex - 1 : this.timeScaleIndex;
-        } else if (e.key === '.') {
-            // speed up
-            this.timeScaleIndex = this.timeScaleIndex === OrbitApp.TIME_SCALE.length - 1 ?
-                this.timeScaleIndex : this.timeScaleIndex + 1;
-        } else if (e.key === 'x') {
-            // toggles the phantom body
-            this.phantomRepresentation.setVisibility(!this.phantomRepresentation.isVisible);
-            this.updatePhantomBody();
+        const key = e.key;
+
+        switch (key) {
+            case ",":
+                // slow down
+                this.timeScaleIndex = this.timeScaleIndex > 0 ? this.timeScaleIndex - 1 : this.timeScaleIndex;
+                break;
+            case ".":
+                // speed up
+                this.timeScaleIndex = this.timeScaleIndex === OrbitApp.TIME_SCALE.length - 1 ?
+                    this.timeScaleIndex : this.timeScaleIndex + 1;
+                break;
+            case "x":
+                // toggles the phantom body
+                this.phantomRepresentation.setVisibility(!this.phantomRepresentation.isVisible);
+                this.updatePhantomBody();
+                break;
+            case "p":
+                this.arePathsVisible = !this.arePathsVisible;
+                for (const representation of this.bodyRepresentations) {
+                    representation.setPathVisibility(this.arePathsVisible);
+                }
+                break;
+            case "r":
+                for (const representation of this.bodyRepresentations) {
+                    representation.resetPath();
+                }
+                break;
+            case "h":
+                if (this.instructions.classList.contains("hidden")) {
+                    this.instructions.classList.remove("hidden");
+                } else {
+                    this.instructions.classList.add("hidden");
+                }
+                break;
         }
     }
 
@@ -300,7 +327,9 @@ class OrbitApp {
         bodyRepresentation.getBodyElement().setAttribute("cx", this.scaleX(body.position.x).toString());
         bodyRepresentation.getBodyElement().setAttribute("cy", this.scaleY(body.position.y).toString());
         bodyRepresentation.getBodyElement().setAttribute("r", this.lengthX(body.radius).toString());
-        bodyRepresentation.getPathElement().setAttribute("d", bodyRepresentation.getPath(this.scaleXCallback, this.scaleYCallback));
+        if (this.arePathsVisible) {
+            bodyRepresentation.getPathElement().setAttribute("d", bodyRepresentation.getPath(this.scaleXCallback, this.scaleYCallback));
+        }
     }
 
     /**

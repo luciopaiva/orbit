@@ -29,6 +29,14 @@ class BodyRepresentation {
         this.pathElement.classList.add('hidden');
     }
 
+    setPathVisibility(isPathVisible) {
+        if (isPathVisible) {
+            this.pathElement.classList.remove('hidden');
+        } else {
+            this.pathElement.classList.add('hidden');
+        }
+    }
+
     accruePositionDeltaInMeters(metersToAdd) {
         this.accruedPositionDeltaInMeters += metersToAdd;
     }
