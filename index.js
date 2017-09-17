@@ -87,7 +87,7 @@ class OrbitApp {
 
         this.updateCallback = this.updateSimulation.bind(this);
         this.simulationElapsedTimeInSeconds = 0;
-        this.previousTimestamp = performance.now();
+        this.previousTimestamp = window.performance.now();
         this.nextTimeShouldUpdateMetrics = this.previousTimestamp;
         window.requestAnimationFrame(this.updateSimulation.bind(this, this.previousTimestamp));
     }
@@ -242,7 +242,7 @@ class OrbitApp {
             this.auxiliaryVector.set(orbiter.position).subtract(influence.position);
             const r = this.auxiliaryVector.length();
             const centrifugalSpeed = Math.sqrt(OrbitApp.GRAVITATIONAL_CONSTANT * influence.mass / r);
-            this.auxiliaryVector.normalize().rotate(-OrbitApp.HALF_PI).scale(centrifugalSpeed);
+            this.auxiliaryVector.normalize().rotate(OrbitApp.HALF_PI).scale(centrifugalSpeed);
             orbiter.velocity.add(this.auxiliaryVector);
         }
     }
@@ -412,7 +412,7 @@ class OrbitApp {
      * @return {number} vertica position in pixels
      */
     scaleY(y) {
-        return this.screenHalfHeight + (y / this.halfHeightInMeters) * this.screenHalfHeight;
+        return this.screenHalfHeight - (y / this.halfHeightInMeters) * this.screenHalfHeight;
     }
 
     /**
@@ -442,7 +442,7 @@ OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 1/OrbitApp.MINIMUM_FPS * 1000;
 OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS = 200;
 OrbitApp.GRAVITATIONAL_CONSTANT = 6.67408e-11;
 OrbitApp.HALF_PI = Math.PI / 2;
-OrbitApp.ASTEROID_COUNT = 100;
+OrbitApp.ASTEROID_COUNT = 0;
 
 window.addEventListener("load", () => {
     const ajax = new XMLHttpRequest();
