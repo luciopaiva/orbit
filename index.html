@@ -19,6 +19,10 @@
             background-color: black;
         }
 
+        .hidden {
+            display: none;
+        }
+
         #metrics {
             position: absolute;
             top: 10px;
@@ -29,6 +33,8 @@
             position: absolute;
             bottom: 10pt;
             left: 38%;
+            line-height: 2em;
+            text-align: center;
         }
 
         path {
@@ -52,7 +58,10 @@
 
 <table id="metrics"></table>
 
-<span id="instructions">Use <kbd>,</kbd> to slow down, <kbd>.</kbd> to speed up and the mouse wheel to zoom</span>
+<span id="instructions">
+    Use <kbd>,</kbd> to slow down, <kbd>.</kbd> to speed up and the mouse wheel to zoom<br>
+    Press <kbd>x</kbd> to activate the phantom planet
+</span>
 
 <script src="vector.js"></script>
 <script src="body.js"></script>

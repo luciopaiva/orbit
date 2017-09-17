@@ -62,17 +62,33 @@ class OrbitApp {
         window.addEventListener("resize", () => this.resize());
         this.resize();
 
+        // the sun
         this.sun = new Body(0, 0, star.radiusInMeters * star.radiusMagnificationFactor, star.massInKg);
         this.sunRepresentation = this.makeBodyRepresentation(star.color, this.sun);
         this.drawBody(this.sun, this.sunRepresentation);
 
+        // all planets
         this.processSatellites(new Vector(0, 0), star.satellites, this.sun);
+
+        // the phantom body
+        this.phantom = new Body(0, 0, star.radiusInMeters * star.radiusMagnificationFactor, star.massInKg / 10);
+        this.phantomRepresentation = this.makeBodyRepresentation('fuchsia', this.phantom);
+        this.phantomRepresentation.setVisibility(false);
+        this.latestMousePosition = new Vector();
+        document.addEventListener("mousemove", this.onMouseMove.bind(this));
 
         this.updateCallback = this.updateSimulation.bind(this);
         this.simulationElapsedTimeInSeconds = 0;
         this.previousTimestamp = performance.now();
         this.nextTimeShouldUpdateMetrics = this.previousTimestamp;
         window.requestAnimationFrame(this.updateSimulation.bind(this, this.previousTimestamp));
+    }
+
+    onMouseMove(e) {
+        this.latestMousePosition.set(e.clientX, e.clientY);
+        if (this.phantomRepresentation.isVisible) {
+            this.updatePhantomBody();
+        }
     }
 
     onMouseWheel(e) {
@@ -93,8 +109,19 @@ class OrbitApp {
             // speed up
             this.timeScaleIndex = this.timeScaleIndex === OrbitApp.TIME_SCALE.length - 1 ?
                 this.timeScaleIndex : this.timeScaleIndex + 1;
+        } else if (e.key === 'x') {
+            // toggles the phantom body
+            this.phantomRepresentation.setVisibility(!this.phantomRepresentation.isVisible);
+            this.updatePhantomBody();
         }
+    }
 
+    updatePhantomBody() {
+        if (this.phantomRepresentation.isVisible) {
+            this.phantom.position.x = this.invertedScaleX(this.latestMousePosition.x);
+            this.phantom.position.y = this.invertedScaleY(this.latestMousePosition.y);
+            this.drawBody(this.phantom, this.phantomRepresentation);
+        }
     }
 
     adjustSpaceWidth(delta = 0) {
@@ -237,14 +264,11 @@ class OrbitApp {
     updateOrbit(body, scaledTimeDelta) {
         // take each influence into account
         for (const influence of body.getInfluences()) {
-            const orbitRadius = Math.max(influence.radius,  // draw minimum radius allowed to prevent overshooting
-                this.orbitRadiusVector.set(body.position).subtract(influence.position).length());
-            const gravityPullAcceleration = OrbitApp.GRAVITATIONAL_CONSTANT * influence.mass /
-                (orbitRadius * orbitRadius);
-            this.orbitCentripetalVector.set(this.orbitRadiusVector).invert().normalize()
-                .scale(gravityPullAcceleration * scaledTimeDelta);
-            // update body's velocity vector
-            body.velocity.add(this.orbitCentripetalVector);
+            this.updateVelocityBasedOnGravityPull(body, influence, scaledTimeDelta);
+        }
+
+        if (this.phantomRepresentation.isVisible) {
+            this.updateVelocityBasedOnGravityPull(body, this.phantom, scaledTimeDelta);
         }
 
         // update position based on calculated velocity over time
@@ -252,6 +276,17 @@ class OrbitApp {
         body.position.add(this.auxiliaryVector);
 
         return this.auxiliaryVector.length();
+    }
+
+    updateVelocityBasedOnGravityPull(body, influence, scaledTimeDelta) {
+        const orbitRadius = Math.max(influence.radius,  // draw minimum radius allowed to prevent overshooting
+            this.orbitRadiusVector.set(body.position).subtract(influence.position).length());
+        const gravityPullAcceleration = OrbitApp.GRAVITATIONAL_CONSTANT * influence.mass /
+            (orbitRadius * orbitRadius);
+        this.orbitCentripetalVector.set(this.orbitRadiusVector).invert().normalize()
+            .scale(gravityPullAcceleration * scaledTimeDelta);
+        // update body's velocity vector
+        body.velocity.add(this.orbitCentripetalVector);
     }
 
     /**
@@ -300,6 +335,15 @@ class OrbitApp {
     }
 
     /**
+     * Convert horizontal screen coordinates to position in meters.
+     * @param {number} x
+     * @return {number}
+     */
+    invertedScaleX(x) {
+        return (this.halfWidthInMeters / this.screenHalfWidth) * (x - this.screenHalfWidth);
+    }
+
+    /**
      * Convert a length in meters to a length in pixels.
      *
      * @param {number} w - length in meters
@@ -317,6 +361,15 @@ class OrbitApp {
      */
     scaleY(y) {
         return this.screenHalfHeight + (y / this.halfHeightInMeters) * this.screenHalfHeight;
+    }
+
+    /**
+     * Convert vertical screen coordinates to position in meters.
+     * @param {number} y
+     * @return {number}
+     */
+    invertedScaleY(y) {
+        return (this.halfHeightInMeters / this.screenHalfHeight) * (y - this.screenHalfHeight);
     }
 }
 

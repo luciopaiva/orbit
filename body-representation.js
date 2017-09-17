@@ -9,6 +9,24 @@ class BodyRepresentation {
         this.resetPath(pathLength);
         /** @type {number} stores distance traveled since last point added to path */
         this.accruedPositionDeltaInMeters = 0;
+        this.isVisible = true;
+    }
+
+    setVisibility(isVisible) {
+        if (this.isVisible === undefined || this.isVisible !== isVisible) {
+            isVisible ? this.show() : this.hide();
+            this.isVisible = isVisible;
+        }
+    }
+
+    show() {
+        this.bodyElement.classList.remove('hidden');
+        this.pathElement.classList.remove('hidden');
+    }
+
+    hide() {
+        this.bodyElement.classList.add('hidden');
+        this.pathElement.classList.add('hidden');
     }
 
     accruePositionDeltaInMeters(metersToAdd) {
