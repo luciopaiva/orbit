@@ -205,14 +205,18 @@ class OrbitApp {
         for (let i = 0; i < OrbitApp.ASTEROID_COUNT; i++) {
             const x = -this.halfWidthInMeters + Math.random() * OrbitApp.DISPLAY_WIDTH_IN_METERS;
             const y = -this.halfHeightInMeters + Math.random() * this.halfHeightInMeters * 2;
-            const asteroid = new Body(x, y, 1000e3 * 600, 1000e3);
+            const asteroid = new Body(x, y,
+                OrbitApp.ASTEROID_RADIUS_IN_METERS * OrbitApp.ASTEROID_RADIUS_MAGNIFICATION_FACTOR,
+                OrbitApp.ASTEROID_MASS_IN_KG);
             asteroid.addInfluence(this.sun);
             for (const influence of this.bodies) {
                 asteroid.addInfluence(influence);
             }
             this.startOrbiting(asteroid);
             this.asteroids.push(asteroid);
-            this.asteroidRepresentations.push(this.makeBodyRepresentation("white", asteroid));
+            const representation = this.makeBodyRepresentation("white", asteroid);
+            representation.setPathVisibility(false);
+            this.asteroidRepresentations.push(representation);
         }
 
         for (let i = 0; i < OrbitApp.ASTEROID_COUNT; i++) {
@@ -421,7 +425,7 @@ class OrbitApp {
      * @return {number}
      */
     invertedScaleY(y) {
-        return (this.halfHeightInMeters / this.screenHalfHeight) * (y - this.screenHalfHeight);
+        return (this.halfHeightInMeters / this.screenHalfHeight) * (this.screenHalfHeight - y);
     }
 }
 
@@ -442,6 +446,10 @@ OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 1/OrbitApp.MINIMUM_FPS * 1000;
 OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS = 200;
 OrbitApp.GRAVITATIONAL_CONSTANT = 6.67408e-11;
 OrbitApp.HALF_PI = Math.PI / 2;
+
+OrbitApp.ASTEROID_RADIUS_IN_METERS = 3000e3;
+OrbitApp.ASTEROID_RADIUS_MAGNIFICATION_FACTOR = 600;
+OrbitApp.ASTEROID_MASS_IN_KG = 1000e3;
 OrbitApp.ASTEROID_COUNT = 0;
 
 window.addEventListener("load", () => {
