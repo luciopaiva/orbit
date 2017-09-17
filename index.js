@@ -76,6 +76,8 @@ class OrbitApp {
         // all planets
         this.processSatellites(new Vector(0, 0), star.satellites, this.sun);
 
+        this.addAsteroids();
+
         // the phantom body
         this.phantom = new Body(0, 0, star.radiusInMeters * star.radiusMagnificationFactor, star.massInKg / 10);
         this.phantomRepresentation = this.makeBodyRepresentation('fuchsia', this.phantom);
@@ -194,6 +196,28 @@ class OrbitApp {
             const newOrbitBasePoint = new Vector();
             this.processSatellites(newOrbitBasePoint.add(orbitBasePoint).add(planet.position),
                 planetDefinition.satellites, ...influences, planet);
+        }
+    }
+
+    addAsteroids() {
+        this.asteroids = [];
+        this.asteroidRepresentations = [];
+        for (let i = 0; i < OrbitApp.ASTEROID_COUNT; i++) {
+            const x = -this.halfWidthInMeters + Math.random() * OrbitApp.DISPLAY_WIDTH_IN_METERS;
+            const y = -this.halfHeightInMeters + Math.random() * this.halfHeightInMeters * 2;
+            const asteroid = new Body(x, y, 1000e3 * 600, 1000e3);
+            asteroid.addInfluence(this.sun);
+            for (const influence of this.bodies) {
+                asteroid.addInfluence(influence);
+            }
+            this.startOrbiting(asteroid);
+            this.asteroids.push(asteroid);
+            this.asteroidRepresentations.push(this.makeBodyRepresentation("white", asteroid));
+        }
+
+        for (let i = 0; i < OrbitApp.ASTEROID_COUNT; i++) {
+            this.bodies.push(this.asteroids[i]);
+            this.bodyRepresentations.push(this.asteroidRepresentations[i]);
         }
     }
 
@@ -417,6 +441,7 @@ OrbitApp.MINIMUM_FPS = 20;
 OrbitApp.MAXIMUM_DT_ALLOWED_IN_MILLIS = 1/OrbitApp.MINIMUM_FPS * 1000;
 OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS = 200;
 OrbitApp.GRAVITATIONAL_CONSTANT = 6.67408e-11;
+OrbitApp.ASTEROID_COUNT = 100;
 
 window.addEventListener("load", () => {
     const ajax = new XMLHttpRequest();
