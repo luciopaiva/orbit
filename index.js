@@ -25,6 +25,9 @@ class OrbitApp {
         /** @type {Vector} */
         this.orbitCentripetalVector = new Vector();
 
+        this.scaleXCallback = this.scaleX.bind(this);
+        this.scaleYCallback = this.scaleY.bind(this);
+
         this.svg = document.getElementById("universe");
         this.metricsTable = document.getElementById("metrics");
         this.metricsCallbacks = [];
@@ -207,7 +210,7 @@ class OrbitApp {
         this.svg.appendChild(bodyElement);
 
         const bodyRepresentation = new BodyRepresentation(bodyElement, pathElement, OrbitApp.PATH_LENGTH_IN_STEPS);
-        bodyRepresentation.addPointToPath(this.scaleX(body.position.x), this.scaleY(body.position.y));
+        bodyRepresentation.addPointToPath(body.position.x, body.position.y);
         return bodyRepresentation;
     }
 
@@ -230,11 +233,11 @@ class OrbitApp {
 
                 representation.accruePositionDeltaInMeters(distanceTraveledInMeters);
                 if (this.lengthX(representation.getAccruedPositionDeltaInMeters()) > OrbitApp.SIGNIFICANT_PATH_DELTA_IN_PIXELS) {
-                    representation.addPointToPath(this.scaleX(body.position.x), this.scaleY(body.position.y));
+                    representation.addPointToPath(body.position.x, body.position.y);
                     representation.resetPositionDeltaInMeters();
                     representation.clearLatestPoint();
                 } else {
-                    representation.setLatestPoint(this.scaleX(body.position.x), this.scaleY(body.position.y));
+                    representation.setLatestPoint(body.position.x, body.position.y);
                 }
             }
         }
@@ -297,7 +300,7 @@ class OrbitApp {
         bodyRepresentation.getBodyElement().setAttribute("cx", this.scaleX(body.position.x).toString());
         bodyRepresentation.getBodyElement().setAttribute("cy", this.scaleY(body.position.y).toString());
         bodyRepresentation.getBodyElement().setAttribute("r", this.lengthX(body.radius).toString());
-        bodyRepresentation.getPathElement().setAttribute("d", bodyRepresentation.getPath());
+        bodyRepresentation.getPathElement().setAttribute("d", bodyRepresentation.getPath(this.scaleXCallback, this.scaleYCallback));
     }
 
     /**
@@ -313,10 +316,6 @@ class OrbitApp {
 
         this.svg.setAttribute("width", window.innerWidth.toString());
         this.svg.setAttribute("height", window.innerHeight.toString());
-
-        for (const representation of this.bodyRepresentations) {
-            representation.resetPath();
-        }
 
         // sun will be static
         if (this.sun) {

@@ -85,15 +85,15 @@ class BodyRepresentation {
         this.latestPoint.y = 0;
     }
 
-    getPath() {
+    getPath(scaleX, scaleY) {
         let pathStr = "";
         const startIndex = this.pathSize === this.pathCap ? (this.pathTail + 1) & this.pathMask : 0;
         let pointsLeft = this.pathSize;
         for (let i = startIndex; --pointsLeft > 0; i = (i + 1) & this.pathMask) {
-            pathStr += BodyRepresentation.makePathCommand(this.path[i], pathStr.length === 0);
+            pathStr += BodyRepresentation.makePathCommand(this.path[i], pathStr.length === 0, scaleX, scaleY);
         }
         if (!BodyRepresentation.isPointZero(this.latestPoint)) {
-            pathStr += BodyRepresentation.makePathCommand(this.latestPoint, pathStr.length === 0);
+            pathStr += BodyRepresentation.makePathCommand(this.latestPoint, pathStr.length === 0, scaleX, scaleY);
         }
         return pathStr;
     }
@@ -102,10 +102,12 @@ class BodyRepresentation {
      * @private
      * @param {Vector} point
      * @param {boolean} isFirst
+     * @param {function} scaleX
+     * @param {function} scaleY
      */
-    static makePathCommand(point, isFirst) {
+    static makePathCommand(point, isFirst, scaleX, scaleY) {
         const command = isFirst ? "M" : "L";
-        return `${command}${point.x},${point.y} `;
+        return `${command}${scaleX(point.x)},${scaleY(point.y)} `;
     }
 
     /**
@@ -121,7 +123,7 @@ class BodyRepresentation {
      * @param {Vector} point
      */
     static isPointValid(point) {
-        return !isNaN(point.x) && !isNaN(point.y) && isFinite(point.x) && isFinite(point.y) && point.x !== 0 && point.y !== 0;
+        return !isNaN(point.x) && !isNaN(point.y) && isFinite(point.x) && isFinite(point.y);
     }
 
     getAccruedPositionDeltaInMeters() {
