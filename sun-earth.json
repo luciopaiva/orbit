@@ -9,13 +9,24 @@
   "satellites": [
     {
       "name": "Earth",
-      "color": "blue",
+      "color": "dodgerblue",
       "massInKg": 5.972e24,
       "orbitRadiusInMeters": 149.6e9,
       "orbitRadiusMagnificationFactor": 1,
       "radiusInMeters": 6371e3,
-      "radiusMagnificationFactor": 600,
-      "satellites": []
+      "radiusMagnificationFactor": 1,
+      "satellites": [
+        {
+          "name": "Moon",
+          "color": "gray",
+          "massInKg": 0.07346e24,
+          "orbitRadiusInMeters": 0.3844e9,
+          "orbitRadiusMagnificationFactor": 1,
+          "radiusInMeters": 1738.1e3,
+          "radiusMagnificationFactor": 1,
+          "satellites": []
+        }
+      ]
     }
   ]
 }

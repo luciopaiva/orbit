@@ -35,18 +35,7 @@
       "orbitRadiusMagnificationFactor": 1,
       "radiusInMeters": 6371e3,
       "radiusMagnificationFactor": 600,
-      "satellites": [
-        {
-          "name": "Moon",
-          "color": "gray",
-          "massInKg": 0.07346e24,
-          "orbitRadiusInMeters": 0.3844e9,
-          "orbitRadiusMagnificationFactor": 10,
-          "radiusInMeters": 1738.1e3,
-          "radiusMagnificationFactor": 600,
-          "satellites": []
-        }
-      ]
+      "satellites": []
     },
     {
       "name": "Mars",

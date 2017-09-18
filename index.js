@@ -44,7 +44,7 @@ class OrbitApp {
         });
         this.addMetric("Time scale", () => OrbitApp.TIME_SCALE_DESC[this.timeScaleIndex] + " per second");
 
-        this.arePathsVisible = true;
+        this.arePathsVisible = false;
 
         // ToDo bring back these metrics
         // this.addMetric("Earth orbit speed", () => this.earth.velocity.length().toFixed(1) + " m/s");
@@ -179,23 +179,23 @@ class OrbitApp {
             return;
         }
 
-        for (const planetDefinition of satellites) {
-            console.info(`Processing ${planetDefinition.name}...`);
-            const startingPointX = orbitBasePoint.x +
-                planetDefinition.orbitRadiusInMeters * planetDefinition.orbitRadiusMagnificationFactor;
-            const startingPointY = orbitBasePoint.y;
-            const planet = new Body(startingPointX, startingPointY,
-                planetDefinition.radiusInMeters * planetDefinition.radiusMagnificationFactor,
-                planetDefinition.massInKg);
+        for (const bodyFact of satellites) {
+            console.info(`Processing ${bodyFact.name}...`);
+            const orbitRadius = bodyFact.orbitRadiusInMeters * bodyFact.orbitRadiusMagnificationFactor;
+            const theta = Math.random() * 2 * Math.PI;
+            const x = Math.cos(theta) * orbitRadius;
+            const y = Math.sin(theta) * orbitRadius;
+            const planetRadius = bodyFact.radiusInMeters * bodyFact.radiusMagnificationFactor;
+            const planet = new Body(x, y, planetRadius, bodyFact.massInKg);
             for (const influence of influences) {
                 planet.addInfluence(influence);
             }
             this.startOrbiting(planet);
             this.bodies.push(planet);
-            this.bodyRepresentations.push(this.makeBodyRepresentation(planetDefinition.color, planet));
+            this.bodyRepresentations.push(this.makeBodyRepresentation(bodyFact.color, planet));
             const newOrbitBasePoint = new Vector();
             this.processSatellites(newOrbitBasePoint.add(orbitBasePoint).add(planet.position),
-                planetDefinition.satellites, ...influences, planet);
+                bodyFact.satellites, ...influences, planet);
         }
     }
 
@@ -203,15 +203,18 @@ class OrbitApp {
         this.asteroids = [];
         this.asteroidRepresentations = [];
         for (let i = 0; i < OrbitApp.ASTEROID_COUNT; i++) {
-            const x = -this.halfWidthInMeters + Math.random() * OrbitApp.DISPLAY_WIDTH_IN_METERS;
-            const y = -this.halfHeightInMeters + Math.random() * this.halfHeightInMeters * 2;
+            const theta = Math.random() * 2 * Math.PI;
+            const distance = OrbitApp.ASTEROID_MINIMUM_FIELD_RADIUS_IN_METERS + Math.random() *
+                (OrbitApp.ASTEROID_MAXIMUM_FIELD_RADIUS_IN_METERS - OrbitApp.ASTEROID_MINIMUM_FIELD_RADIUS_IN_METERS);
+            const x = Math.cos(theta) * distance;
+            const y = Math.sin(theta) * distance;
             const asteroid = new Body(x, y,
                 OrbitApp.ASTEROID_RADIUS_IN_METERS * OrbitApp.ASTEROID_RADIUS_MAGNIFICATION_FACTOR,
                 OrbitApp.ASTEROID_MASS_IN_KG);
             asteroid.addInfluence(this.sun);
-            for (const influence of this.bodies) {
-                asteroid.addInfluence(influence);
-            }
+            // for (const influence of this.bodies) {
+            //     asteroid.addInfluence(influence);
+            // }
             this.startOrbiting(asteroid);
             this.asteroids.push(asteroid);
             const representation = this.makeBodyRepresentation("white", asteroid);
@@ -246,7 +249,7 @@ class OrbitApp {
             this.auxiliaryVector.set(orbiter.position).subtract(influence.position);
             const r = this.auxiliaryVector.length();
             const centrifugalSpeed = Math.sqrt(OrbitApp.GRAVITATIONAL_CONSTANT * influence.mass / r);
-            this.auxiliaryVector.normalize().rotate(OrbitApp.HALF_PI).scale(centrifugalSpeed);
+            this.auxiliaryVector.normalize().scale(centrifugalSpeed).rotate(OrbitApp.HALF_PI);
             orbiter.velocity.add(this.auxiliaryVector);
         }
     }
@@ -447,9 +450,11 @@ OrbitApp.METRICS_UPDATE_PERIOD_IN_MILLIS = 200;
 OrbitApp.GRAVITATIONAL_CONSTANT = 6.67408e-11;
 OrbitApp.HALF_PI = Math.PI / 2;
 
+OrbitApp.ASTEROID_MINIMUM_FIELD_RADIUS_IN_METERS = 70e9;
+OrbitApp.ASTEROID_MAXIMUM_FIELD_RADIUS_IN_METERS = 700e9;
 OrbitApp.ASTEROID_RADIUS_IN_METERS = 3000e3;
-OrbitApp.ASTEROID_RADIUS_MAGNIFICATION_FACTOR = 600;
-OrbitApp.ASTEROID_MASS_IN_KG = 1000e3;
+OrbitApp.ASTEROID_RADIUS_MAGNIFICATION_FACTOR = 400;
+OrbitApp.ASTEROID_MASS_IN_KG = 1;  // it really doesn't matter
 OrbitApp.ASTEROID_COUNT = 0;
 
 window.addEventListener("load", () => {
